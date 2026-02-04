@@ -31,3 +31,8 @@ packages = ["src/chirp"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/chirp", "README.md", "pyproject.toml", "uv.lock"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

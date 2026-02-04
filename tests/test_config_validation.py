@@ -74,6 +74,100 @@ class TestConfigValidation(unittest.TestCase):
             conf = ChirpConfig(audio_feedback_volume=vol)
             conf.validate()  # Should not raise
 
+    # --- Streaming/chunked transcription field tests ---
+
+    def test_streaming_fields_have_correct_defaults(self):
+        """All new streaming fields should have correct default values."""
+        conf = ChirpConfig()
+        self.assertEqual(conf.streaming_transcription, True)
+        self.assertEqual(conf.chunk_duration, 4.0)
+        self.assertEqual(conf.chunk_overlap, 0.5)
+        self.assertEqual(conf.pre_roll_seconds, 0.2)
+        self.assertEqual(conf.ring_buffer_seconds, 10.0)
+        self.assertEqual(conf.merge_window_words, 5)
+        self.assertEqual(conf.max_chunk_queue_depth, 3)
+        self.assertEqual(conf.silence_threshold, 0.01)
+
+    def test_validate_chunk_duration_too_small(self):
+        """chunk_duration < 1.0 should fail validation."""
+        conf = ChirpConfig(chunk_duration=0.5)
+        with self.assertRaisesRegex(ValueError, "chunk_duration must be >= 1.0"):
+            conf.validate()
+
+    def test_validate_chunk_overlap_negative(self):
+        """Negative chunk_overlap should fail validation."""
+        conf = ChirpConfig(chunk_overlap=-0.1)
+        with self.assertRaisesRegex(ValueError, "chunk_overlap must be >= 0"):
+            conf.validate()
+
+    def test_validate_chunk_duration_not_greater_than_overlap(self):
+        """chunk_duration must be > chunk_overlap."""
+        # Equal case
+        conf = ChirpConfig(chunk_duration=2.0, chunk_overlap=2.0)
+        with self.assertRaisesRegex(ValueError, "chunk_duration must be > chunk_overlap"):
+            conf.validate()
+
+        # Overlap greater
+        conf = ChirpConfig(chunk_duration=2.0, chunk_overlap=3.0)
+        with self.assertRaisesRegex(ValueError, "chunk_duration must be > chunk_overlap"):
+            conf.validate()
+
+    def test_validate_ring_buffer_too_small(self):
+        """ring_buffer_seconds must be >= chunk_duration + pre_roll_seconds."""
+        # chunk_duration=4.0, pre_roll_seconds=0.2 -> need at least 4.2
+        conf = ChirpConfig(ring_buffer_seconds=4.0)
+        with self.assertRaisesRegex(ValueError, "ring_buffer_seconds must be >= chunk_duration"):
+            conf.validate()
+
+    def test_validate_merge_window_words_zero(self):
+        """merge_window_words < 1 should fail validation."""
+        conf = ChirpConfig(merge_window_words=0)
+        with self.assertRaisesRegex(ValueError, "merge_window_words must be >= 1"):
+            conf.validate()
+
+    def test_validate_max_chunk_queue_depth_zero(self):
+        """max_chunk_queue_depth < 1 should fail validation."""
+        conf = ChirpConfig(max_chunk_queue_depth=0)
+        with self.assertRaisesRegex(ValueError, "max_chunk_queue_depth must be >= 1"):
+            conf.validate()
+
+    def test_validate_silence_threshold_negative(self):
+        """Negative silence_threshold should fail validation."""
+        conf = ChirpConfig(silence_threshold=-0.01)
+        with self.assertRaisesRegex(ValueError, "silence_threshold must be >= 0"):
+            conf.validate()
+
+    def test_validate_streaming_fields_valid_config(self):
+        """Valid streaming config should pass validation."""
+        conf = ChirpConfig(
+            chunk_duration=3.0,
+            chunk_overlap=0.5,
+            pre_roll_seconds=0.5,
+            ring_buffer_seconds=5.0,
+            merge_window_words=3,
+            max_chunk_queue_depth=2,
+            silence_threshold=0.0,
+        )
+        conf.validate()  # Should not raise
+
+    def test_validate_streaming_edge_cases(self):
+        """Edge cases for streaming validation."""
+        # Minimum valid ring_buffer (exactly chunk_duration + pre_roll_seconds)
+        conf = ChirpConfig(
+            chunk_duration=2.0,
+            pre_roll_seconds=0.5,
+            ring_buffer_seconds=2.5,
+        )
+        conf.validate()  # Should not raise
+
+        # Zero overlap is valid
+        conf = ChirpConfig(chunk_overlap=0.0)
+        conf.validate()  # Should not raise
+
+        # Zero silence_threshold is valid
+        conf = ChirpConfig(silence_threshold=0.0)
+        conf.validate()  # Should not raise
+
     def test_valid_default_config(self):
         """Default config should pass validation."""
         conf = ChirpConfig()

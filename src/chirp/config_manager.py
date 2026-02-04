@@ -36,6 +36,15 @@ class ChirpConfig:
     stop_sound_path: Optional[str] = None
     error_sound_path: Optional[str] = None
     max_recording_duration: float = 45.0
+    # Streaming/chunked transcription settings
+    streaming_transcription: bool = True
+    chunk_duration: float = 4.0
+    chunk_overlap: float = 0.5
+    pre_roll_seconds: float = 0.2
+    ring_buffer_seconds: float = 10.0
+    merge_window_words: int = 5
+    max_chunk_queue_depth: int = 3
+    silence_threshold: float = 0.01
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ChirpConfig":
@@ -112,6 +121,43 @@ class ChirpConfig:
         if not (0.0 <= self.audio_feedback_volume <= 1.0):
             raise ValueError(
                 f"audio_feedback_volume must be between 0.0 and 1.0, got {self.audio_feedback_volume}"
+            )
+
+        # Streaming/chunked transcription validation
+        if self.chunk_duration < 1.0:
+            raise ValueError(
+                f"chunk_duration must be >= 1.0, got {self.chunk_duration}"
+            )
+
+        if self.chunk_overlap < 0:
+            raise ValueError(
+                f"chunk_overlap must be >= 0, got {self.chunk_overlap}"
+            )
+
+        if self.chunk_duration <= self.chunk_overlap:
+            raise ValueError(
+                f"chunk_duration must be > chunk_overlap, got chunk_duration={self.chunk_duration}, chunk_overlap={self.chunk_overlap}"
+            )
+
+        min_ring_buffer = self.chunk_duration + self.pre_roll_seconds
+        if self.ring_buffer_seconds < min_ring_buffer:
+            raise ValueError(
+                f"ring_buffer_seconds must be >= chunk_duration + pre_roll_seconds ({min_ring_buffer}), got {self.ring_buffer_seconds}"
+            )
+
+        if self.merge_window_words < 1:
+            raise ValueError(
+                f"merge_window_words must be >= 1, got {self.merge_window_words}"
+            )
+
+        if self.max_chunk_queue_depth < 1:
+            raise ValueError(
+                f"max_chunk_queue_depth must be >= 1, got {self.max_chunk_queue_depth}"
+            )
+
+        if self.silence_threshold < 0:
+            raise ValueError(
+                f"silence_threshold must be >= 0, got {self.silence_threshold}"
             )
 
 
