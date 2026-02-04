@@ -7,7 +7,7 @@
 
 ## CT-01: Add silence trimming utility
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 Create the `trim_silence()` function that removes leading and trailing silence from audio chunks. This reduces wasted inference time and improves merge accuracy by producing cleaner chunk boundaries.
@@ -35,7 +35,7 @@ Create the `trim_silence()` function that removes leading and trailing silence f
 
 ## CT-02: Add merge algorithm for chunk transcripts
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 Implement the word-overlap merge algorithm that combines sequential chunk transcripts while removing duplicates caused by audio overlap.
@@ -65,7 +65,7 @@ Implement the word-overlap merge algorithm that combines sequential chunk transc
 
 ## CT-03: Create ChunkedTranscriber core class
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 Create the chunking controller that buffers audio frames, creates chunks at the right intervals, manages the worker thread/queue, and orchestrates transcription.
@@ -100,7 +100,7 @@ Create the chunking controller that buffers audio frames, creates chunks at the 
 
 ## CT-04: Add finalize method to ChunkedTranscriber
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 Implement the finalization logic that processes remaining audio, waits for the worker to complete, and merges all chunk transcripts into final text.
@@ -133,7 +133,7 @@ Implement the finalization logic that processes remaining audio, waits for the w
 
 ## CT-05: Refactor AudioCapture for persistent stream
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 Modify `AudioCapture` to maintain a persistent `InputStream` with ring buffer, eliminating the device initialization delay on each recording toggle.
@@ -167,7 +167,7 @@ Modify `AudioCapture` to maintain a persistent `InputStream` with ring buffer, e
 
 ## CT-06: Add device error recovery to AudioCapture
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 Add error handling for audio device issues (unplug, sleep/resume) with automatic recovery attempts.
@@ -198,7 +198,7 @@ Add error handling for audio device issues (unplug, sleep/resume) with automatic
 
 ## CT-07: Add ring buffer tests
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 Create comprehensive tests for the ring buffer implementation in AudioCapture.
@@ -227,7 +227,7 @@ Create comprehensive tests for the ring buffer implementation in AudioCapture.
 
 ## CT-08: Wire chunked transcription in ChirpApp
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 Integrate `ChunkedTranscriber` and refactored `AudioCapture` into the main application flow.
@@ -262,7 +262,7 @@ Integrate `ChunkedTranscriber` and refactored `AudioCapture` into the main appli
 
 ## CT-09: Handle model timeout interaction
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 When streaming transcription is enabled, disable model unloading to keep the model warm for instant chunk processing.
@@ -291,7 +291,7 @@ When streaming transcription is enabled, disable model unloading to keep the mod
 
 ## CT-10: Add new config fields and validation
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 Add all new configuration fields to `ChirpConfig` with proper validation rules.
@@ -332,7 +332,7 @@ Add all new configuration fields to `ChirpConfig` with proper validation rules.
 
 ## CT-11: Add merge logic tests
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 Create comprehensive unit tests for the merge algorithm covering all edge cases.
@@ -363,7 +363,7 @@ Create comprehensive unit tests for the merge algorithm covering all edge cases.
 
 ## CT-12: Add integration tests
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 Create integration tests that verify the full chunked transcription flow works end-to-end.
@@ -392,7 +392,7 @@ Create integration tests that verify the full chunked transcription flow works e
 
 ## CT-13: Add instrumentation and debug logging
 
-**Status:** pending
+**Status:** done
 
 **Description:**
 Add comprehensive debug logging throughout the chunked transcription pipeline for troubleshooting and performance analysis.

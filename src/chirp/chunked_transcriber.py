@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 import queue
 import threading
+import time
 from dataclasses import dataclass, field
 from typing import Callable
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 from .audio_utils import trim_silence
 from .text_merge import merge_transcripts
