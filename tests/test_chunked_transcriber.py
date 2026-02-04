@@ -282,3 +282,139 @@ class TestChunkedTranscriber:
 
         with pytest.raises(RuntimeError, match="not started"):
             transcriber.feed(np.zeros(1000, dtype=np.float32))
+
+    def test_finalize_processes_remaining_buffer(self):
+        """Test that finalize processes any remaining audio in the buffer."""
+        received_chunks: list[np.ndarray] = []
+
+        def mock_transcribe(audio: np.ndarray) -> str:
+            received_chunks.append(audio.copy())
+            return "transcribed"
+
+        sample_rate = 16000
+        chunk_duration = 1.0
+        chunk_samples = int(chunk_duration * sample_rate)
+
+        transcriber = ChunkedTranscriber(
+            transcribe_fn=mock_transcribe,
+            chunk_duration=chunk_duration,
+            chunk_overlap=0.0,
+            sample_rate=sample_rate,
+            silence_threshold=0.0,
+        )
+
+        transcriber.start()
+
+        # Feed less than a full chunk - should stay in buffer
+        partial_audio = np.random.randn(chunk_samples // 2).astype(np.float32)
+        transcriber.feed(partial_audio)
+
+        # No chunks should be processed yet
+        time.sleep(0.1)
+        assert len(received_chunks) == 0
+
+        # Finalize should process the remaining buffer
+        transcriber.finalize()
+        transcriber.shutdown()
+
+        # Now the partial chunk should have been processed
+        assert len(received_chunks) == 1
+        np.testing.assert_array_equal(received_chunks[0], partial_audio)
+
+    def test_finalize_returns_merged_text(self):
+        """Test that finalize returns the merged transcription."""
+        call_count = 0
+
+        def mock_transcribe(audio: np.ndarray) -> str:
+            nonlocal call_count
+            call_count += 1
+            return f"chunk{call_count}"
+
+        sample_rate = 16000
+        chunk_samples = int(1.0 * sample_rate)
+
+        transcriber = ChunkedTranscriber(
+            transcribe_fn=mock_transcribe,
+            chunk_duration=1.0,
+            chunk_overlap=0.0,
+            sample_rate=sample_rate,
+            silence_threshold=0.0,
+        )
+
+        transcriber.start()
+
+        # Feed 2 full chunks plus partial
+        audio = np.random.randn(chunk_samples * 2 + chunk_samples // 2).astype(
+            np.float32
+        )
+        transcriber.feed(audio)
+
+        # Finalize should return merged text from all chunks
+        result = transcriber.finalize()
+        transcriber.shutdown()
+
+        # Should have text from all 3 chunks (2 full + 1 partial)
+        assert "chunk1" in result
+        assert "chunk2" in result
+        assert "chunk3" in result
+
+    def test_needs_fallback_true_when_dropped(self):
+        """Test that needs_fallback returns True when chunks were dropped."""
+        process_event = threading.Event()
+
+        def slow_transcribe(audio: np.ndarray) -> str:
+            process_event.wait()
+            return "test"
+
+        sample_rate = 16000
+        chunk_samples = 16000
+
+        transcriber = ChunkedTranscriber(
+            transcribe_fn=slow_transcribe,
+            chunk_duration=1.0,
+            chunk_overlap=0.0,
+            sample_rate=sample_rate,
+            max_queue_depth=1,
+            silence_threshold=0.0,
+        )
+
+        transcriber.start()
+
+        # Feed more chunks than queue can hold to force drops
+        for _ in range(5):
+            transcriber.feed(np.random.randn(chunk_samples).astype(np.float32))
+
+        # Should need fallback due to dropped chunks
+        assert transcriber.needs_fallback is True
+
+        process_event.set()
+        transcriber.shutdown()
+
+    def test_needs_fallback_false_when_none_dropped(self):
+        """Test that needs_fallback returns False when no chunks were dropped."""
+
+        def mock_transcribe(audio: np.ndarray) -> str:
+            return "test"
+
+        sample_rate = 16000
+        chunk_samples = 16000
+
+        transcriber = ChunkedTranscriber(
+            transcribe_fn=mock_transcribe,
+            chunk_duration=1.0,
+            chunk_overlap=0.0,
+            sample_rate=sample_rate,
+            silence_threshold=0.0,
+        )
+
+        transcriber.start()
+
+        # Feed one chunk
+        transcriber.feed(np.random.randn(chunk_samples).astype(np.float32))
+
+        time.sleep(0.2)
+
+        # No drops should have occurred
+        assert transcriber.needs_fallback is False
+
+        transcriber.shutdown()

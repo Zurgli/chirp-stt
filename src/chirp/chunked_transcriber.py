@@ -199,6 +199,59 @@ class ChunkedTranscriber:
                 return 0
             return self._state.dropped_chunks
 
+    @property
+    def needs_fallback(self) -> bool:
+        """Return True if any chunks were dropped, indicating fallback may be needed."""
+        return self.get_dropped_count() > 0
+
+    def finalize(self, timeout: float | None = None) -> str:
+        """
+        Finalize transcription: process remaining audio and return merged text.
+
+        Args:
+            timeout: Maximum time to wait for worker to finish (default: chunk_duration * 2)
+
+        Returns:
+            Merged transcription from all chunks
+        """
+        if timeout is None:
+            timeout = self.chunk_duration * 2
+
+        with self._state_lock:
+            if self._state is None:
+                return ""
+
+            # Enqueue any remaining audio as final chunk
+            if len(self._state.buffer) > 0:
+                final_chunk = self._state.buffer.copy()
+                chunk_idx = self._state.chunk_index
+                self._state.chunk_index += 1
+                self._state.buffer = np.array([], dtype=np.float32)
+
+                # Trim silence
+                trimmed = trim_silence(
+                    final_chunk,
+                    threshold=self.silence_threshold,
+                    sample_rate=self.sample_rate,
+                )
+
+                try:
+                    self._queue.put_nowait((chunk_idx, trimmed))
+                except queue.Full:
+                    self._state.dropped_chunks += 1
+
+        # Wait for worker to finish processing all items
+        try:
+            self._queue.join()
+        except Exception:
+            pass  # Queue may have been cleared
+
+        # Get final text
+        with self._state_lock:
+            if self._state is None:
+                return ""
+            return self._state.accumulated_text
+
     def shutdown(self) -> None:
         """Clean shutdown of the worker thread."""
         self._shutdown_event.set()
