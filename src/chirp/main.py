@@ -67,6 +67,7 @@ class ChirpApp:
             console = Console(stderr=True)
 
         try:
+            self.recording_overlay.show("loading")
             with console.status("[bold green]Initializing Parakeet model...[/bold green]", spinner="dots"):
                 self.parakeet = ParakeetManager(
                     model_name=self.config.parakeet_model,
@@ -76,10 +77,13 @@ class ChirpApp:
                     logger=self.logger,
                     model_dir=model_dir,
                     timeout=self.config.model_timeout,
+                    loading_state_callback=self._handle_model_loading_state,
                 )
         except ModelNotPreparedError as exc:
             self.logger.error(str(exc))
             raise SystemExit(1) from exc
+        finally:
+            self.recording_overlay.hide()
         self.text_injector = TextInjector(
             keyboard_manager=self.keyboard,
             logger=self.logger,
@@ -177,6 +181,12 @@ class ChirpApp:
 
     def _log_capture_status(self, message: str) -> None:
         self.logger.debug("Audio status: %s", message)
+
+    def _handle_model_loading_state(self, is_loading: bool) -> None:
+        if is_loading:
+            self.recording_overlay.show("loading")
+        else:
+            self.recording_overlay.hide()
 
 
 def _build_parser() -> argparse.ArgumentParser:
