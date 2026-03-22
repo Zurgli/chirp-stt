@@ -19,6 +19,7 @@ from .config_manager import ConfigManager
 from .keyboard_shortcuts import KeyboardShortcutManager
 from .logger import get_logger
 from .parakeet_manager import ModelNotPreparedError, ParakeetManager
+from .recording_overlay import RecordingOverlay, enable_dpi_awareness
 from .text_injector import TextInjector
 
 
@@ -51,6 +52,10 @@ class ChirpApp:
             logger=self.logger,
             enabled=self.config.audio_feedback,
             volume=self.config.audio_feedback_volume,
+        )
+        self.recording_overlay = RecordingOverlay(
+            logger=self.logger,
+            enabled=self.config.recording_overlay,
         )
 
         console = None
@@ -97,6 +102,8 @@ class ChirpApp:
             self.keyboard.wait()
         except KeyboardInterrupt:
             self.logger.info("Interrupted, exiting.")
+        finally:
+            self.recording_overlay.close()
 
     def _register_hotkey(self) -> None:
         self.logger.debug("Registering hotkey: %s", self.config.primary_shortcut)
@@ -122,6 +129,7 @@ class ChirpApp:
             self.audio_feedback.play_error(self.config.error_sound_path)
             return
         self._recording = True
+        self.recording_overlay.show("transcribing")
         self.audio_feedback.play_start(self.config.start_sound_path)
         self.logger.info("Recording started")
 
@@ -143,6 +151,7 @@ class ChirpApp:
         self.logger.debug("Stopping audio capture")
         waveform = self.audio_capture.stop()
         self._recording = False
+        self.recording_overlay.hide()
         self.audio_feedback.play_stop(self.config.stop_sound_path)
         self.logger.info("Recording stopped (%s samples)", waveform.size)
         self._executor.submit(self._transcribe_and_inject, waveform)
@@ -197,6 +206,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
+    enable_dpi_awareness()
     args = _build_parser().parse_args(argv)
     if args.check:
         _run_smoke_check(verbose=args.verbose)
