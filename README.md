@@ -50,12 +50,18 @@ https://huggingface.co/spaces/hf-audio/open_asr_leaderboard
 - If you set up the PATH alias:
   ```powershell
   chirp
+  chirp-dev
   chirp --verbose
   chirp --help
   ```
 - Or run directly from the chirp-stt directory:
   ```powershell
   uv run python -m chirp.main
+  ```
+- Development mode with automatic restart on source/config changes:
+  ```powershell
+  uv run chirp-dev
+  uv run chirp-dev -- --verbose
   ```
 - Verbose/debug logging:
   ```powershell
