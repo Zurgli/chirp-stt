@@ -21,6 +21,7 @@ dependencies = [
 
 [project.scripts]
 chirp = "chirp.main:main"
+chirp-dev = "chirp.dev:main"
 chirp-setup = "chirp.setup:main"
 
 [tool.hatch.build.targets.wheel]
