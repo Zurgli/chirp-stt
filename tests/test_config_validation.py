@@ -28,6 +28,12 @@ class TestConfigValidation(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"paste_mode must be 'ctrl' or 'ctrl\+shift'"):
             conf.validate()
 
+    def test_validate_injection_mode_invalid(self):
+        """Invalid injection_mode should fail validation."""
+        conf = ChirpConfig(injection_mode="magic")
+        with self.assertRaisesRegex(ValueError, r"injection_mode must be 'type' or 'paste'"):
+            conf.validate()
+
     def test_validate_model_timeout_negative(self):
         """Negative model_timeout should fail validation."""
         conf = ChirpConfig(model_timeout=-1.0)
@@ -86,10 +92,11 @@ class TestConfigValidation(unittest.TestCase):
 
     def test_from_dict_then_validate(self):
         """Verify the flow used by ConfigManager (from_dict -> validate)."""
-        data = {"threads": -5, "paste_mode": "Hack"}
+        data = {"threads": -5, "paste_mode": "Hack", "injection_mode": "Paste"}
         conf = ChirpConfig.from_dict(data)
         # from_dict converts "Hack" to "hack"
         self.assertEqual(conf.paste_mode, "hack")
+        self.assertEqual(conf.injection_mode, "paste")
 
         with self.assertRaisesRegex(ValueError, "threads must be non-negative"):
             conf.validate()

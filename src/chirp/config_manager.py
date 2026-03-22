@@ -26,6 +26,7 @@ class ChirpConfig:
     language: Optional[str] = None
     word_overrides: Dict[str, str] = field(default_factory=dict)
     post_processing: str = ""
+    injection_mode: str = "type"
     paste_mode: str = "ctrl"
     clipboard_behavior: bool = True
     clipboard_clear_delay: float = 0.75
@@ -48,6 +49,8 @@ class ChirpConfig:
 
         if "primary_shortcut" in merged:
             merged["primary_shortcut"] = str(merged["primary_shortcut"]).lower()
+        if "injection_mode" in merged:
+            merged["injection_mode"] = str(merged["injection_mode"]).lower()
         if "paste_mode" in merged:
             merged["paste_mode"] = str(merged["paste_mode"]).lower()
         if "onnx_providers" in merged:
@@ -75,6 +78,11 @@ class ChirpConfig:
         if self.clipboard_clear_delay <= 0:
             raise ValueError(
                 f"clipboard_clear_delay must be positive, got {self.clipboard_clear_delay}"
+            )
+
+        if self.injection_mode not in ("type", "paste"):
+            raise ValueError(
+                f"injection_mode must be 'type' or 'paste', got {self.injection_mode!r}"
             )
 
         if self.paste_mode not in ("ctrl", "ctrl+shift"):
