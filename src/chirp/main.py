@@ -113,10 +113,36 @@ class ChirpApp:
     def _register_hotkey(self) -> None:
         self.logger.debug("Registering hotkey: %s", self.config.primary_shortcut)
         try:
-            self.keyboard.register(self.config.primary_shortcut, self.toggle_recording)
+            self.keyboard.register(self.config.primary_shortcut, self._handle_hotkey)
         except Exception:
             self.logger.error("Unable to register primary shortcut. Run as Administrator on Windows.")
             raise
+
+    def _handle_hotkey(self) -> None:
+        try:
+            self.toggle_recording()
+        except Exception as exc:  # pragma: no cover - hotkey thread safety
+            self.logger.exception("Hotkey handler failed: %s", exc)
+            self._recover_from_hotkey_failure()
+
+    def _recover_from_hotkey_failure(self) -> None:
+        with self._lock:
+            if self._stop_timer:
+                self._stop_timer.cancel()
+                self._stop_timer = None
+            self._recording = False
+        try:
+            self.audio_capture.stop()
+        except Exception:
+            pass
+        try:
+            self.recording_overlay.hide()
+        except Exception:
+            pass
+        try:
+            self.audio_feedback.play_error(self.config.error_sound_path)
+        except Exception:
+            pass
 
     def toggle_recording(self) -> None:
         with self._lock:
