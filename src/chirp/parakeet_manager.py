@@ -5,7 +5,7 @@ import logging
 import threading
 import time
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Callable, Optional, Sequence
 
 import numpy as np
 import onnx_asr
@@ -35,6 +35,7 @@ class ParakeetManager:
         logger: logging.Logger,
         model_dir: Path,
         timeout: float = 300.0,
+        loading_state_callback: Optional[Callable[[bool], None]] = None,
     ) -> None:
         self._logger = logger
         self._model_name = model_name
@@ -43,6 +44,7 @@ class ParakeetManager:
         self._session_options = self._build_session_options(threads)
         self._model_dir = model_dir
         self._timeout = timeout  # 0 or negative means never unload
+        self._loading_state_callback = loading_state_callback
         self._last_access = time.time()
         self._lock = threading.Lock()
         self._model = self._load_model()
@@ -103,6 +105,7 @@ class ParakeetManager:
         return options
 
     def _load_model(self):
+        self._set_loading_state(True)
         self._logger.info(
             "Loading Parakeet model %s (quantization=%s, providers=%s)",
             self._model_name,
@@ -122,6 +125,8 @@ class ParakeetManager:
             raise ModelNotPreparedError(
                 f"Model not found at {self._model_dir} — run: uv run chirp-setup"
             ) from exc
+        finally:
+            self._set_loading_state(False)
 
     def transcribe(self, audio: np.ndarray, *, sample_rate: int = 16_000, language: Optional[str] = None) -> str:
         with self._lock:
@@ -134,3 +139,11 @@ class ParakeetManager:
             return ""
         result = model.recognize(waveform, sample_rate=sample_rate, language=language)
         return result if isinstance(result, str) else str(result)
+
+    def _set_loading_state(self, is_loading: bool) -> None:
+        if self._loading_state_callback is None:
+            return
+        try:
+            self._loading_state_callback(is_loading)
+        except Exception:
+            pass
