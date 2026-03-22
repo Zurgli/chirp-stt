@@ -32,6 +32,7 @@ class ChirpConfig:
     model_timeout: float = 300.0
     audio_feedback: bool = True
     audio_feedback_volume: float = 1.0
+    recording_overlay: bool = True
     start_sound_path: Optional[str] = None
     stop_sound_path: Optional[str] = None
     error_sound_path: Optional[str] = None

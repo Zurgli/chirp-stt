@@ -16,7 +16,7 @@ https://huggingface.co/spaces/hf-audio/open_asr_leaderboard
 ## Features
 - Local STT via Parakeet TDT 0.6B v3 with optional int8 quantization.
 - Global hotkey to toggle capture, clipboard paste injection, and configurable word overrides.
-- Optional audio feedback cues and style prompting for post-processed text.
+- Optional audio feedback cues, top-center recording overlay, and style prompting for post-processed text.
 - CPU support by default with optional GPU providers when available.
 
 ## Architecture
@@ -89,6 +89,7 @@ paste_mode = "ctrl"                             # Non-Windows platforms honor th
 clipboard_behavior = true                       # Keeps clipboard history clean when true by clearing it after `clipboard_clear_delay` seconds.
 clipboard_clear_delay = 0.75                    # Seconds to wait before clearing the clipboard (only if `clipboard_behavior` is true).
 audio_feedback = true                           # Enables start/stop chime playback.
+recording_overlay = true                        # Shows a small always-on-top overlay while recording.
 start_sound_path = ""                           # Leave blank to use bundled asset; default: src/chirp/assets/ping-up.wav
 stop_sound_path = ""                            # Leave blank to use bundled asset; default: src/chirp/assets/ping-down.wav
 
