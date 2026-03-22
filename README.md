@@ -85,7 +85,8 @@ onnx_providers = "cpu"                          # ONNX runtime provider string (
 threads = 0                                     # 0 (or empty) lets ONNX decide; set a positive integer to pin thread usage.
 language = "en"                                 # Optional ISO language code; leave blank to let Parakeet auto-detect.
 post_processing = ""                            # Text prompt for the StyleGuide; see docs/post_processing_style_guide.md (e.g. "sentence case", "prepend: >>", "append: — dictated with Chirp").
-paste_mode = "ctrl"                             # Non-Windows platforms honor this: "ctrl" -> Ctrl+V, "ctrl+shift" -> Ctrl+Shift+V. Windows types text directly today.
+injection_mode = "type"                         # "type" writes characters directly; "paste" uses clipboard + paste shortcut.
+paste_mode = "ctrl"                             # Paste shortcut: "ctrl" -> Ctrl+V, "ctrl+shift" -> Ctrl+Shift+V. Useful with injection_mode = "paste".
 clipboard_behavior = true                       # Keeps clipboard history clean when true by clearing it after `clipboard_clear_delay` seconds.
 clipboard_clear_delay = 0.75                    # Seconds to wait before clearing the clipboard (only if `clipboard_behavior` is true).
 audio_feedback = true                           # Enables start/stop chime playback.

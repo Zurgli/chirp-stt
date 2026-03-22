@@ -87,6 +87,7 @@ class ChirpApp:
         self.text_injector = TextInjector(
             keyboard_manager=self.keyboard,
             logger=self.logger,
+            injection_mode=self.config.injection_mode,
             paste_mode=self.config.paste_mode,
             word_overrides=self.config.word_overrides,
             post_processing=self.config.post_processing,
@@ -248,6 +249,7 @@ def _run_smoke_check(*, verbose: bool = False) -> None:
     text_injector = TextInjector(
         keyboard_manager=KeyboardShortcutManager(logger=logger),
         logger=logger,
+        injection_mode=config.injection_mode,
         paste_mode=config.paste_mode,
         word_overrides=config.word_overrides,
         post_processing=config.post_processing,

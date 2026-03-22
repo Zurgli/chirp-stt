@@ -8,7 +8,7 @@ class TestTextInjector(unittest.TestCase):
         self.mock_keyboard = MagicMock()
         self.mock_logger = MagicMock(spec=logging.Logger)
 
-    def _create_injector(self, paste_mode="ctrl"):
+    def _create_injector(self, injection_mode="type", paste_mode="ctrl"):
         """Create injector with mocked dependencies."""
         # Import here to ensure patches are active
         from chirp.text_injector import TextInjector
@@ -16,6 +16,7 @@ class TestTextInjector(unittest.TestCase):
         return TextInjector(
             keyboard_manager=self.mock_keyboard,
             logger=self.mock_logger,
+            injection_mode=injection_mode,
             paste_mode=paste_mode,
             word_overrides={},
             post_processing="",
@@ -35,6 +36,17 @@ class TestTextInjector(unittest.TestCase):
 
             # Should NOT touch clipboard
             mock_pyperclip.copy.assert_not_called()
+
+    @patch("chirp.text_injector.pyperclip")
+    def test_inject_windows_paste_mode_uses_clipboard(self, mock_pyperclip):
+        """On Windows with injection_mode='paste', inject should use clipboard paste."""
+        with patch("chirp.text_injector.sys.platform", "win32"):
+            injector = self._create_injector(injection_mode="paste", paste_mode="ctrl+shift")
+            injector.inject("test text")
+
+            mock_pyperclip.copy.assert_called_with("test text")
+            self.mock_keyboard.send.assert_called_with("ctrl+shift+v")
+            self.mock_keyboard.write.assert_not_called()
 
     @patch("chirp.text_injector.pyperclip")
     def test_inject_linux_copies_to_clipboard(self, mock_pyperclip):

@@ -66,6 +66,7 @@ class TextInjector:
         *,
         keyboard_manager: KeyboardShortcutManager,
         logger: logging.Logger,
+        injection_mode: str,
         paste_mode: str,
         word_overrides: Dict[str, str],
         post_processing: str,
@@ -74,6 +75,7 @@ class TextInjector:
     ) -> None:
         self._keyboard = keyboard_manager
         self._logger = logger
+        self._injection_mode = injection_mode
         self._paste_mode = paste_mode
         self._word_overrides = {k.lower(): v for k, v in word_overrides.items()}
         self._override_pattern = self._build_override_pattern(self._word_overrides)
@@ -105,8 +107,7 @@ class TextInjector:
     def inject(self, text: str) -> None:
         processed = self.process(text)
 
-        # On Windows, type directly to avoid unnecessary clipboard exposure
-        if sys.platform.startswith("win"):
+        if sys.platform.startswith("win") and self._injection_mode == "type":
             time.sleep(0.12)  # Brief delay for focus settling
             try:
                 self._keyboard.write(processed)
@@ -114,7 +115,7 @@ class TextInjector:
                 self._logger.error("Text injection failed: %s", exc)
             return
 
-        # Non-Windows: use clipboard + paste
+        # Use clipboard + paste when configured, or on non-Windows by default.
         try:
             pyperclip.copy(processed)
         except pyperclip.PyperclipException as exc:  # pragma: no cover - clipboard edge cases
